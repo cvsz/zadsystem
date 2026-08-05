@@ -75,7 +75,8 @@ async def generate(brief: CreativeBrief):
 
 @app.get("/creative/templates")
 async def templates():
-    return {"templates": [{"no": i+1, "angle": t[0], "category": "Promotion" if i<5 else "Product" if i<10 else "Engagement"} for i, t in enumerate(gen_creatives("X"))], "total": 20}
+    creatives = gen_creatives("X")
+    return {"templates": [{"no": i+1, "angle": c["angle"], "category": "Promotion" if i<5 else "Product" if i<10 else "Engagement"} for i, c in enumerate(creatives)], "total": 20}
 
 @app.get("/report/{brand_name}")
 async def report(brand_name: str):
