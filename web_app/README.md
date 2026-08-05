@@ -59,7 +59,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Server will start at `http://localhost:8000`
+Server will start at `http://localhost:8001` (or your chosen port)
 
 ### 3. Run Frontend
 
@@ -162,13 +162,13 @@ Get all 20 creative templates.
 
 ```bash
 # Health check
-curl http://localhost:8000/health
+curl http://localhost:8001/health
 
 # Get dashboard
-curl http://localhost:8000/dashboard/Sephora
+curl http://localhost:8001/dashboard/Sephora
 
 # Get creative templates
-curl http://localhost:8000/creative/templates
+curl http://localhost:8001/creative/templates
 ```
 
 ### Test Frontend
@@ -195,7 +195,7 @@ LOG_LEVEL=INFO
 Edit `frontend/index.html` and change:
 
 ```javascript
-apiBaseUrl: 'http://localhost:8000'  // Change to your backend URL
+apiBaseUrl: 'http://localhost:8001'  // Change to your backend URL
 ```
 
 ## 🚀 Deployment
