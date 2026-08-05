@@ -219,21 +219,25 @@ class ReportBuilder:
             return "*ไม่มีไอเดียโฆษณา*"
         
         formatted = []
-        for idea in creative_ideas[:3]:  # Show top 3
-            formatted.append(f"""#### Variation {idea.get("variation_id", "?")}
+        for idea in creative_ideas[:5]:  # Show top 5 in report
+            formatted.append(f"""#### Creative #{idea.get('no', '?')}: {idea.get('angle', '')}
 
-**Hook:** {idea.get("hook", "")}
+**Hook:** {idea.get('hook', '')}
 
-**Body:**
-{idea.get("body", "")}
+**Headline:** {idea.get('headline', '')}
 
-**CTA:** {idea.get("cta", "")}
+**Primary Text:**
+{idea.get('primary_text', '')}
 
-**Visual Recommendations:**
-{chr(10).join("- " + v for v in idea.get("visual_recommendations", []))}
+**Visual Idea:** {idea.get('visual_idea', '')}
+
+**CTA:** {idea.get('cta', '')}
 
 ---
 """)
+        
+        if len(creative_ideas) > 5:
+            formatted.append(f"\n*และอีก {len(creative_ideas) - 5} Creative Ideas ในไฟล์แยก*\n")
         
         return "\n".join(formatted)
     
