@@ -1,18 +1,23 @@
-```gitignore
-# Compiled and build artifacts
-*.pyc
+```
+# Python
 __pycache__/
-*.o
-*.obj
-
-# Dependencies
-.venv/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
 venv/
+.venv/
+.ENV
+.ENV.local
 
-# Logs and temp files
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Logs
 *.log
-*.tmp
-*.swp
 
 # Environment
 .env
@@ -22,24 +27,16 @@ venv/
 # Editors
 .vscode/
 .idea/
+*.swp
+*.swo
+*.tmp
 
-# Coverage reports
+# Coverage
+.coverage
 coverage/
 htmlcov/
-.coverage
 
-# MyPy cache
-.mypy_cache/
-
-# Pytest cache
-.pytest_cache/
-
-# Distribution files
-dist/
-build/
-*.egg-info/
-
-# OS specific
+# OS
 .DS_Store
 Thumbs.db
 ```
