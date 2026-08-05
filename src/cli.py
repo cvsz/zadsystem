@@ -157,13 +157,14 @@ def creative(product, angle, platform, count):
 @main.command()
 @click.argument('brand')
 @click.option('--output', '-o', default='report.md', help='Output file')
-def report(brand, output):
+@click.option('--country', default='TH', help='Country code')
+def report(brand, output, country):
     """📊 สร้างรายงานผู้บริหาร"""
     console.print(f"\n📊 กำลังสร้างรายงานสำหรับ {brand}...\n")
     
     # Gather all data
     ad_spy = AdSpy()
-    spy_results = ad_spy.spy_brand(brand)
+    spy_results = ad_spy.spy_brand(brand, country=country)
     
     ads = spy_results["ads"]
     
@@ -174,8 +175,11 @@ def report(brand, output):
     gap_results = gap_finder.find_gaps(ads, ads, brand)
     
     creative_factory = CreativeFactory()
-    creative_ideas = creative_factory.generate_multiple_variations(
-        f"{brand} Product", "brightness_glow", 3
+    creative_ideas = creative_factory.generate_creative_20(
+        brand=brand,
+        product=f"{brand} Product",
+        target_audience="หญิง 25-40 ปี",
+        offer="ลด 10% ออเดอร์แรก + ฟรี mini size"
     )
     
     # Build report
@@ -192,8 +196,10 @@ def report(brand, output):
     builder.save_report(report_content, output)
     
     console.print(Panel.fit(f"✅ รายงานถูกบันทึกที่: {output}"))
-    console.print("\n📄 Preview:")
-    console.print(report_content[:500] + "...")
+    console.print(f"\n📄 สร้าง Creative Ideas แล้ว {len(creative_ideas)} แบบ")
+    console.print("\n💡 ตัวอย่าง Creative 3 แบบแรก:")
+    for idea in creative_ideas[:3]:
+        console.print(f"  {idea['no']}. {idea['angle']}: {idea['hook']}")
 
 
 if __name__ == "__main__":
