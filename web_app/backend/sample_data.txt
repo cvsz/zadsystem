@@ -1,0 +1,39 @@
+# ZADSYSTEM DATA EXPORT
+# Brand: Sephora Thailand
+# Date: 2024-05-21
+# Source: Meta Ad Library + Internal Analytics
+
+[COMPETITORS]
+1. Eveandboy - Active Ads: 45 - Top Angle: "Flash Sale 24h"
+2. Beauticool - Active Ads: 32 - Top Angle: "K-Beauty Exclusive"
+3. Konvy - Active Ads: 28 - Top Angle: "Authentic Guarantee"
+
+[WINNING_ADS]
+ID: AD_001 | Hook: "หยุดก่อน! โปรนี้เหลือ 3 ชั่วโมง" | ROAS: 5.2x | Spend: ฿15,000
+ID: AD_002 | Hook: "รีวิวจากผู้ใช้จริง 1000+ คน" | ROAS: 4.8x | Spend: ฿12,500
+ID: AD_003 | Hook: "ชุดทดลองราคาพิเศษ แค่ 99 บาท" | ROAS: 6.1x | Spend: ฿8,000
+
+[HOOKS_LIBRARY]
+- "ความลับที่แบรนด์เครื่องสำอางไม่อยากให้คุณรู้"
+- "3 ขั้นตอนเปลี่ยนผิวพังให้ปังใน 7 วัน"
+- "ทำไม influencer ถึงใช้ผลิตภัณฑ์นี้ทุกวัน?"
+- "แจกฟรี! คู่มือแต่งหน้าสำหรับมือใหม่"
+- "เปรียบเทียบชัดๆ ตัวไหนคุ้มกว่ากัน"
+
+[TRENDS_TODAY]
+1. #GlassSkinChallenge - Engagement: High - Opportunity: Create tutorial reel
+2. #CleanBeautyTH - Engagement: Medium - Opportunity: Highlight ingredients
+3. #MakeupTransition - Engagement: High - Opportunity: Before/After video
+
+[CONTENT_CALENDAR_IDEAS]
+Mon: Educational (Ingredient Spotlight)
+Wed: Social Proof (Customer Reviews)
+Fri: Promotion (Weekend Flash Sale)
+Sun: Engagement (Q&A Session)
+
+[ADS_PERFORMANCE_SUMMARY]
+Total Spend (7D): ฿38,200
+Total Revenue (7D): ฿183,360
+ROAS Average: 4.8x
+Best Performing Platform: Instagram Reels
+Worst Performing Platform: Facebook Feed
