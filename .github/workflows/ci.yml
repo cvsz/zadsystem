@@ -29,4 +29,6 @@ jobs:
       - name: Compile
         run: python -m compileall -q src
       - name: Test
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: pytest -q
