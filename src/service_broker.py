@@ -15,6 +15,7 @@ from typing import Any
 
 @dataclass(frozen=True)
 class AcquisitionEvent:
+    tenant_id: str
     service_id: str
     channel: str
     campaign_id: str
@@ -27,6 +28,25 @@ class AcquisitionEvent:
     expected_cac: Decimal
     currency: str = "THB"
     schema_version: str = "service-broker.acquisition.v1"
+
+    def __post_init__(self) -> None:
+        """Fail closed when routing identity is missing.
+
+        Tenant scope is part of the service-broker security boundary. Acquisition
+        events without an explicit tenant must never be forwarded into shared
+        orchestration where they could be attributed to the wrong customer.
+        """
+
+        required_identity = {
+            "tenant_id": self.tenant_id,
+            "service_id": self.service_id,
+            "channel": self.channel,
+            "campaign_id": self.campaign_id,
+            "lead_id": self.lead_id,
+        }
+        for field_name, value in required_identity.items():
+            if not value or not value.strip():
+                raise ValueError(f"{field_name} must be a non-empty string")
 
     def contribution(self) -> Decimal:
         return self.expected_revenue - (
