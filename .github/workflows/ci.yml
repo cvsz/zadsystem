@@ -27,6 +27,17 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt -r requirements-dev.txt
           python -m pip check
+      - name: Audit root Python environment
+        run: python -m pip_audit
+      - name: Audit deployable FastAPI backend dependencies
+        run: python -m pip_audit --requirement web_app/backend/requirements.txt
+      - name: Smoke-test deployable FastAPI backend dependencies
+        run: |
+          python -m venv .venv-backend
+          .venv-backend/bin/python -m pip install --upgrade pip
+          .venv-backend/bin/python -m pip install -r web_app/backend/requirements.txt
+          .venv-backend/bin/python -m pip check
+          PYTHONPATH=web_app/backend .venv-backend/bin/python -c "import main; assert main.app is not None"
       - name: Compile
         run: python -m compileall -q src
       - name: Test
