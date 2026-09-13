@@ -4,11 +4,13 @@ from datetime import datetime
 from typing import Any, Dict, List
 
 from cors import configured_cors_origins
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 
+load_dotenv()
 CORS_ORIGINS = configured_cors_origins()
 app = FastAPI(title="ZAD System - Content Dashboard", version="2.0.0")
 app.add_middleware(
@@ -110,4 +112,4 @@ async def report(brand_name: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8001)
