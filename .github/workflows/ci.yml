@@ -33,6 +33,27 @@ jobs:
         run: python -m pip_audit
       - name: Audit deployable FastAPI backend dependencies
         run: python -m pip_audit --requirement web_app/backend/requirements.txt
+      - name: Generate CycloneDX dependency SBOM evidence
+        run: |
+          mkdir -p artifacts/sbom
+          python -m pip_audit --requirement requirements.txt --format cyclonedx-json --output artifacts/sbom/root.cdx.json
+          python -m pip_audit --requirement web_app/backend/requirements.txt --format cyclonedx-json --output artifacts/sbom/backend.cdx.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for path in (Path('artifacts/sbom/root.cdx.json'), Path('artifacts/sbom/backend.cdx.json')):
+              data = json.loads(path.read_text(encoding='utf-8'))
+              if data.get('bomFormat') != 'CycloneDX' or not data.get('components'):
+                  raise SystemExit(f'invalid or empty CycloneDX SBOM: {path}')
+              print(f'{path}: {len(data["components"])} components')
+          PY
+      - name: Upload dependency SBOM evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dependency-sboms-${{ github.sha }}
+          path: artifacts/sbom/*.cdx.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Smoke-test deployable FastAPI backend dependencies
         run: |
           python -m venv .venv-backend
