@@ -27,8 +27,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt -r requirements-dev.txt
           python -m pip check
-      - name: Audit Python dependencies
+      - name: Audit root Python environment
         run: python -m pip_audit
+      - name: Audit deployable FastAPI backend dependencies
+        run: python -m pip_audit --requirement web_app/backend/requirements.txt
       - name: Compile
         run: python -m compileall -q src
       - name: Test
