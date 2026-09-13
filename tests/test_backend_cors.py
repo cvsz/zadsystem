@@ -1,6 +1,6 @@
 import pytest
 
-from web_app.backend.main import configured_cors_origins
+from web_app.backend.cors import configured_cors_origins
 
 
 def test_cors_defaults_to_same_origin(monkeypatch):
