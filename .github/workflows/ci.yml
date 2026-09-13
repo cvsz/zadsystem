@@ -38,6 +38,26 @@ jobs:
         env:
           PIP_CONSTRAINT: web_app/backend/constraints.txt
         run: python -m pip_audit --requirement web_app/backend/requirements.txt
+      - name: Build and verify immutable wheelhouse evidence
+        run: |
+          mkdir -p artifacts/wheelhouse/root artifacts/wheelhouse/backend artifacts/wheelhouse/manifests
+          python -m pip download --only-binary=:all: --dest artifacts/wheelhouse/root -c constraints.txt -r requirements.txt
+          python -m pip download --only-binary=:all: --dest artifacts/wheelhouse/backend -c web_app/backend/constraints.txt -r web_app/backend/requirements.txt
+          sha256sum -c supply-chain/python312-ubuntu2404-root.sha256
+          sha256sum -c supply-chain/python312-ubuntu2404-backend.sha256
+          find artifacts/wheelhouse/root -maxdepth 1 -type f -print0 | sort -z | xargs -0 sha256sum > artifacts/wheelhouse/manifests/root.sha256
+          find artifacts/wheelhouse/backend -maxdepth 1 -type f -print0 | sort -z | xargs -0 sha256sum > artifacts/wheelhouse/manifests/backend.sha256
+          cmp supply-chain/python312-ubuntu2404-root.sha256 artifacts/wheelhouse/manifests/root.sha256
+          cmp supply-chain/python312-ubuntu2404-backend.sha256 artifacts/wheelhouse/manifests/backend.sha256
+      - name: Verify offline installation from trusted wheelhouses
+        run: |
+          python -m venv .venv-root-offline
+          .venv-root-offline/bin/python -m pip install --no-index --find-links artifacts/wheelhouse/root -c constraints.txt -r requirements.txt
+          .venv-root-offline/bin/python -m pip check
+          python -m venv .venv-backend-offline
+          .venv-backend-offline/bin/python -m pip install --no-index --find-links artifacts/wheelhouse/backend -c web_app/backend/constraints.txt -r web_app/backend/requirements.txt
+          .venv-backend-offline/bin/python -m pip check
+          PYTHONPATH=web_app/backend .venv-backend-offline/bin/python -c "import main; assert main.app is not None"
       - name: Generate CycloneDX dependency SBOM evidence
         run: |
           mkdir -p artifacts/sbom
@@ -85,18 +105,21 @@ jobs:
               'tested_sha': os.environ['TESTED_SHA'],
               'checkout_semantics': 'pull_request runs test GitHub merge ref; push runs test the pushed commit',
               'dependency_resolution': 'Python 3.12 / ubuntu-24.04 transitive versions constrained by repository constraint files',
+              'artifact_integrity': 'downloaded runtime wheels are verified against committed SHA-256 manifests before offline installation',
+              'trusted_hash_baseline': 'committed manifests were promoted from successful CI artifact 10323307198 / run 34776291869 and are independently enforced on subsequent runs',
           }
           Path('artifacts/sbom/provenance.json').write_text(
               json.dumps(provenance, indent=2) + '\n', encoding='utf-8'
           )
           PY
-      - name: Upload dependency SBOM evidence
+      - name: Upload dependency evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: dependency-sboms-${{ env.SOURCE_HEAD_SHA }}
+          name: dependency-evidence-${{ env.SOURCE_HEAD_SHA }}
           path: |
             artifacts/sbom/*.cdx.json
             artifacts/sbom/provenance.json
+            artifacts/wheelhouse/manifests/*.sha256
           if-no-files-found: error
           retention-days: 30
       - name: Smoke-test deployable FastAPI backend dependencies
