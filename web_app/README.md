@@ -9,7 +9,7 @@ Customer-facing demo dashboard for ZAD ad-intelligence workflows.
 - **Local frontend origin:** `http://localhost:3000`
 - **Local backend origin:** `http://localhost:8001`
 
-The frontend and backend are cross-origin in the supported local-development setup, so the backend must explicitly allow the frontend origin. Wildcard CORS is intentionally rejected.
+The frontend and backend are cross-origin only in the supported local-development setup. Production uses a same-origin reverse proxy so the browser never needs a wildcard or broad CORS policy.
 
 ## Local development
 
@@ -53,24 +53,22 @@ cd web_app/frontend
 python -m http.server 3000
 ```
 
-Open `http://localhost:3000` in a browser.
+Open `http://localhost:3000` in a browser. The shipped frontend detects this local-development origin and calls `http://localhost:8001`.
 
-Opening `index.html` directly with a `file://` URL is not a supported configuration because browsers use a `null` origin for local files and the backend intentionally does not allow wildcard/null-origin CORS.
+Opening `index.html` directly with a `file://` URL is not supported because browsers use a `null` origin and the backend intentionally rejects wildcard/null-origin CORS.
 
 ## Production deployment
 
-Prefer a same-origin reverse proxy so the browser frontend and API share one HTTPS origin. When the frontend is intentionally hosted on another origin, set `ZAD_CORS_ORIGINS` to the exact HTTPS frontend origin(s) before starting the API.
+Serve the frontend and API through one HTTPS origin. Outside the supported local-development origin, the shipped frontend uses `window.location.origin` as its API base URL. A production reverse proxy therefore must route the API paths (`/health`, `/dashboard`, `/search`, `/winners`, `/angles`, `/creative`, and `/report`) to the FastAPI service while serving the static frontend from the same public origin.
 
-Example:
+Start the internal API service without a cross-origin allow-list when using that topology:
 
 ```bash
-export ZAD_CORS_ORIGINS=https://dashboard.example.com
+unset ZAD_CORS_ORIGINS
 uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
-Do not use `*`. Do not add origins that are not owned and controlled by the deployment operator.
-
-For Netlify, Vercel, S3/CloudFront, or another static-host deployment, configure the backend with that deployment's exact HTTPS origin before directing users to the frontend.
+Do not expose the internal API port directly to browsers when the public dashboard is served elsewhere. Cross-origin production hosting of the shipped frontend is not a supported deployment mode until an explicit, operator-controlled frontend API-base configuration is added and tested.
 
 ## API endpoints
 
@@ -87,14 +85,15 @@ For Netlify, Vercel, S3/CloudFront, or another static-host deployment, configure
 ## Security notes
 
 - CORS defaults to same-origin only.
-- Cross-origin access must be explicitly configured through `ZAD_CORS_ORIGINS`.
+- Local cross-origin access must be explicitly configured through `ZAD_CORS_ORIGINS`.
+- Wildcard origins are rejected.
 - Allowed CORS methods are limited to `GET`, `POST`, and `OPTIONS`.
 - Allowed request headers are limited to `Authorization` and `Content-Type`.
 - The repository CI validates dependency vulnerabilities, immutable GitHub Actions refs, trusted wheel hashes, offline installation, CycloneDX SBOMs, backend imports, and tests.
 
 ## Smoke checks
 
-With the backend running:
+With the local backend running:
 
 ```bash
 curl http://localhost:8001/health
