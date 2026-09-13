@@ -16,6 +16,9 @@ jobs:
   test:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    env:
+      SOURCE_HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      TESTED_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
@@ -33,6 +36,41 @@ jobs:
         run: python -m pip_audit
       - name: Audit deployable FastAPI backend dependencies
         run: python -m pip_audit --requirement web_app/backend/requirements.txt
+      - name: Generate CycloneDX dependency SBOM evidence
+        run: |
+          mkdir -p artifacts/sbom
+          python -m pip_audit --requirement requirements.txt --format cyclonedx-json --output artifacts/sbom/root.cdx.json
+          python -m pip_audit --requirement web_app/backend/requirements.txt --format cyclonedx-json --output artifacts/sbom/backend.cdx.json
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          sboms = (Path('artifacts/sbom/root.cdx.json'), Path('artifacts/sbom/backend.cdx.json'))
+          for path in sboms:
+              data = json.loads(path.read_text(encoding='utf-8'))
+              if data.get('bomFormat') != 'CycloneDX' or not data.get('components'):
+                  raise SystemExit(f'invalid or empty CycloneDX SBOM: {path}')
+              print(f'{path}: {len(data["components"])} components')
+
+          provenance = {
+              'source_head_sha': os.environ['SOURCE_HEAD_SHA'],
+              'tested_sha': os.environ['TESTED_SHA'],
+              'checkout_semantics': 'pull_request runs test GitHub merge ref; push runs test the pushed commit',
+          }
+          Path('artifacts/sbom/provenance.json').write_text(
+              json.dumps(provenance, indent=2) + '\n', encoding='utf-8'
+          )
+          PY
+      - name: Upload dependency SBOM evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dependency-sboms-${{ env.SOURCE_HEAD_SHA }}
+          path: |
+            artifacts/sbom/*.cdx.json
+            artifacts/sbom/provenance.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Smoke-test deployable FastAPI backend dependencies
         run: |
           python -m venv .venv-backend
