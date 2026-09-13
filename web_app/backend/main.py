@@ -1,43 +1,12 @@
 """ZAD System - Content Dashboard API - Standalone Demo"""
-import os
 import random
 from datetime import datetime
 from typing import Any, Dict, List
-from urllib.parse import urlparse
 
+from cors import configured_cors_origins
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
-
-def configured_cors_origins() -> list[str]:
-    """Return validated explicit browser origins; empty means same-origin only."""
-    raw = os.getenv("ZAD_CORS_ORIGINS", "").strip()
-    if not raw:
-        return []
-
-    origins: list[str] = []
-    for value in raw.split(","):
-        origin = value.strip().rstrip("/")
-        if not origin:
-            continue
-        if origin == "*":
-            raise RuntimeError("ZAD_CORS_ORIGINS must not contain wildcard origins")
-        parsed = urlparse(origin)
-        if (
-            parsed.scheme not in {"http", "https"}
-            or not parsed.netloc
-            or parsed.username is not None
-            or parsed.password is not None
-            or parsed.path not in {"", "/"}
-            or parsed.params
-            or parsed.query
-            or parsed.fragment
-        ):
-            raise RuntimeError(f"Invalid CORS origin: {origin}")
-        if origin not in origins:
-            origins.append(origin)
-    return origins
 
 
 CORS_ORIGINS = configured_cors_origins()
