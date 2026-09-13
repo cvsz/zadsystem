@@ -27,36 +27,64 @@ jobs:
           cache: pip
       - name: Verify immutable GitHub Actions pins
         run: python scripts/verify_action_pins.py
-      - name: Install dependencies
+      - name: Install dependencies from validated constraints
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt -r requirements-dev.txt
+          python -m pip install -c constraints.txt -r requirements.txt -r requirements-dev.txt
           python -m pip check
       - name: Audit root Python environment
         run: python -m pip_audit
       - name: Audit deployable FastAPI backend dependencies
+        env:
+          PIP_CONSTRAINT: web_app/backend/constraints.txt
         run: python -m pip_audit --requirement web_app/backend/requirements.txt
       - name: Generate CycloneDX dependency SBOM evidence
         run: |
           mkdir -p artifacts/sbom
-          python -m pip_audit --requirement requirements.txt --format cyclonedx-json --output artifacts/sbom/root.cdx.json
-          python -m pip_audit --requirement web_app/backend/requirements.txt --format cyclonedx-json --output artifacts/sbom/backend.cdx.json
+          PIP_CONSTRAINT=constraints.txt python -m pip_audit --requirement requirements.txt --format cyclonedx-json --output artifacts/sbom/root.cdx.json
+          PIP_CONSTRAINT=web_app/backend/constraints.txt python -m pip_audit --requirement web_app/backend/requirements.txt --format cyclonedx-json --output artifacts/sbom/backend.cdx.json
           python - <<'PY'
           import json
           import os
           from pathlib import Path
 
-          sboms = (Path('artifacts/sbom/root.cdx.json'), Path('artifacts/sbom/backend.cdx.json'))
-          for path in sboms:
-              data = json.loads(path.read_text(encoding='utf-8'))
+          def canonical(name: str) -> str:
+              return name.lower().replace('_', '-').replace('.', '-')
+
+          def read_constraints(path: Path) -> dict[str, str]:
+              result = {}
+              for raw in path.read_text(encoding='utf-8').splitlines():
+                  line = raw.strip()
+                  if not line or line.startswith('#'):
+                      continue
+                  name, version = line.split('==', 1)
+                  result[canonical(name)] = version
+              return result
+
+          pairs = (
+              (Path('artifacts/sbom/root.cdx.json'), Path('constraints.txt')),
+              (Path('artifacts/sbom/backend.cdx.json'), Path('web_app/backend/constraints.txt')),
+          )
+          for sbom_path, constraints_path in pairs:
+              data = json.loads(sbom_path.read_text(encoding='utf-8'))
               if data.get('bomFormat') != 'CycloneDX' or not data.get('components'):
-                  raise SystemExit(f'invalid or empty CycloneDX SBOM: {path}')
-              print(f'{path}: {len(data["components"])} components')
+                  raise SystemExit(f'invalid or empty CycloneDX SBOM: {sbom_path}')
+              actual = {canonical(c['name']): c['version'] for c in data['components']}
+              expected = read_constraints(constraints_path)
+              if actual != expected:
+                  missing = sorted(set(expected) - set(actual))
+                  extra = sorted(set(actual) - set(expected))
+                  changed = sorted(name for name in set(actual) & set(expected) if actual[name] != expected[name])
+                  raise SystemExit(
+                      f'SBOM/constraint drift for {sbom_path}: missing={missing}, extra={extra}, changed={changed}'
+                  )
+              print(f'{sbom_path}: {len(actual)} constrained components verified')
 
           provenance = {
               'source_head_sha': os.environ['SOURCE_HEAD_SHA'],
               'tested_sha': os.environ['TESTED_SHA'],
               'checkout_semantics': 'pull_request runs test GitHub merge ref; push runs test the pushed commit',
+              'dependency_resolution': 'Python 3.12 / ubuntu-24.04 transitive versions constrained by repository constraint files',
           }
           Path('artifacts/sbom/provenance.json').write_text(
               json.dumps(provenance, indent=2) + '\n', encoding='utf-8'
@@ -75,7 +103,7 @@ jobs:
         run: |
           python -m venv .venv-backend
           .venv-backend/bin/python -m pip install --upgrade pip
-          .venv-backend/bin/python -m pip install -r web_app/backend/requirements.txt
+          .venv-backend/bin/python -m pip install -c web_app/backend/constraints.txt -r web_app/backend/requirements.txt
           .venv-backend/bin/python -m pip check
           PYTHONPATH=web_app/backend .venv-backend/bin/python -c "import main; assert main.app is not None"
       - name: Compile
