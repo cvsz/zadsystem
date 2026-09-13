@@ -1,0 +1,3 @@
+# Test-only dependencies are pinned to keep CI behavior reproducible.
+# pytest 9.0.3 includes the CVE-2025-71176 insecure temporary-directory fix.
+pytest==9.0.3
