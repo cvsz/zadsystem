@@ -119,6 +119,8 @@ jobs:
           path: |
             artifacts/sbom/*.cdx.json
             artifacts/sbom/provenance.json
+            artifacts/wheelhouse/root/*.whl
+            artifacts/wheelhouse/backend/*.whl
             artifacts/wheelhouse/manifests/*.sha256
           if-no-files-found: error
           retention-days: 30
